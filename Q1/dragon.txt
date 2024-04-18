@@ -1,0 +1,13 @@
+"X"          // Axiom
+"F"         // strF
+""          // strf
+"X+YF+"    //strX
+"-FX-Y"    //strY
+""         //strU
+""         //strV
+90          //angle of rotation
+0           //initial direction of turtle (east)
+0.5        //Start at x = 0.5 * width
+0.5        //Start at y = 0.5 * height
+0.6        // Initial line length of 0.6 * height
+0.6        // reduction factor for next generation
