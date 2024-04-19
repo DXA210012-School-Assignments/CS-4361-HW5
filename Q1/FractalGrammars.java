@@ -100,19 +100,9 @@ class CvFractalGrammars extends Canvas {
   }
   
   
+
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-   void moveTo(Graphics g, double x, double y) {
-      xLast = x; yLast = y;
-   }
+
 
    public void paint(Graphics g) {
       Dimension d = getSize();
@@ -124,7 +114,7 @@ class CvFractalGrammars extends Canvas {
 
    public void turtleGraphics(Graphics g, String instruction,
          int depth, double len) {
-      double xMark = 0, yMark = 0, dirMark = 0;
+      //double xMark = 0, yMark = 0, dirMark = 0;
       for (int i = 0; i < instruction.length(); i++) {
          char ch = instruction.charAt(i);
          switch (ch) {
@@ -152,15 +142,7 @@ class CvFractalGrammars extends Canvas {
             
 
 
-         case 'f': // Step forward without drawing
-            // Start: (xLast, yLast), direction: dir, steplength: len
-            if (depth == 0) {
-               double rad = Math.PI / 180 * dir;
-               double dx = len * Math.cos(rad), dy = len * Math.sin(rad);
-               moveTo(g, xLast + dx, yLast + dy);
-            } else
-               turtleGraphics(g, strf, depth - 1, reductFact * len);
-            break;
+
          case 'X':
             if (depth > 0)
                turtleGraphics(g, strX, depth - 1, reductFact * len);
@@ -169,19 +151,7 @@ class CvFractalGrammars extends Canvas {
             if (depth > 0)
                turtleGraphics(g, strY, depth - 1, reductFact * len);
             break;
-            
-            
-            
-         case 'U':
-            if (depth > 0)
-               turtleGraphics(g, strU, depth - 1, reductFact * len);
-            break;
-         case 'V':
-            if (depth > 0)
-               turtleGraphics(g, strV, depth - 1, reductFact * len);
-            break;
-            
-            
+
             
             
             
@@ -196,14 +166,7 @@ class CvFractalGrammars extends Canvas {
          case '-': // Turn left
             dir += rotation;
             break;
-         case '[': // Save position and direction
-            xMark = xLast; yMark = yLast;
-            dirMark = dir;
-            break;
-         case ']': // Back to saved position and direction
-            xLast = xMark; yLast = yMark;
-            dir = dirMark;
-            break;
+
          }
       }
    }

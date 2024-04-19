@@ -10,9 +10,7 @@ public class RoundedDragonCurve extends JFrame {
     private int level = 1;
     private String axiom = "";
     private String strF = "";
-    private String strf = "";
-    private String strX = "";
-    private String strY = "";
+
     private double rotation = 0.0;
     private double dirStart = 0.0;
     private double fxStart = 0.5;
@@ -30,6 +28,7 @@ public class RoundedDragonCurve extends JFrame {
         loadFile(fileName);
 
         canvas.addMouseListener(new MouseAdapter() {
+            @SuppressWarnings("deprecation")
             @Override
             public void mousePressed(MouseEvent evt) {
                 // Increase level on left mouse button, decrease on right mouse button
@@ -121,49 +120,6 @@ public class RoundedDragonCurve extends JFrame {
                     } else {
                         turtleGraphics(strF, depth - 1, reductFact * len);
                     }
-                    break;
-                case 'f':
-                    // Move forward if at the maximum depth, otherwise recursively interpret strf
-                    if (depth == 0) {
-                        double rad = Math.toRadians(dir);
-                        double dx = len * Math.cos(rad);
-                        double dy = len * Math.sin(rad);
-                        moveTo(xLast + dx, yLast + dy);
-                    } else {
-                        turtleGraphics(strf, depth - 1, reductFact * len);
-                    }
-                    break;
-                case 'X':
-                    // Recursively interpret strX if not at the maximum depth
-                    if (depth > 0) {
-                        turtleGraphics(strX, depth - 1, reductFact * len);
-                    }
-                    break;
-                case 'Y':
-                    // Recursively interpret strY if not at the maximum depth
-                    if (depth > 0) {
-                        turtleGraphics(strY, depth - 1, reductFact * len);
-                    }
-                    break;
-                case '+':
-                    // Turn left by the specified rotation angle
-                    dir -= rotation;
-                    break;
-                case '-':
-                    // Turn right by the specified rotation angle
-                    dir += rotation;
-                    break;
-                case '[':
-                    // Save current state (position and direction)
-                    xMark = xLast;
-                    yMark = yLast;
-                    dirMark = dir;
-                    break;
-                case ']':
-                    // Restore the saved state (position and direction)
-                    xLast = xMark;
-                    yLast = yMark;
-                    dir = dirMark;
                     break;
             }
         }
