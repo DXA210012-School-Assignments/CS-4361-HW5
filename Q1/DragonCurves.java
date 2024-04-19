@@ -82,114 +82,144 @@ public class DragonCurves extends Frame {
       yLast = yLast + dy;
    }
 
+/**
+ * Overrides the paint method to draw the fractal based on generated instructions.
+ * This method serves as the primary entry point for drawing operations initiated by the AWT painting system.
+ * It calculates the dimensions and starting position based on component size and pre-defined start ratios.
+ * Subsequently, it computes the total drawing length affected by the depth of the fractal recursion (level)
+ * and invokes the turtleGraphics method to render the fractal on the canvas.
+ *
+ * @param g The Graphics object provided by the system which serves as the canvas on which the fractal is drawn.
+ */
 
+   @Override
    public void paint(Graphics g) {
+      // Get the size of the canvas to calculate the maximum allowable dimensions
       Dimension d = getSize();
       maxX = d.width - 1;
       maxY = d.height - 1;
+
+      // Calculate starting positions based on the proportions specified by fxStart and fyStart
       xLast = fxStart * maxX;
       yLast = fyStart * maxY;
-      dir = dirStart; // Initial direction in degrees
-      lastDir = dirStart;
-      String instructions = axiom;
-      double finalLen = lengthFract * maxY;
 
-      // We need to have the final instruction string
-      // instead of recursively interpreting it
-      // Because we need the context of previous and next
-      // characters which isn't available when you do it recursively
+      // Set the initial direction from which drawing will start
+      dir = dirStart;
 
-      // So just expand the string for however many levels we need
-      for(int k=0;k<level;k++)
-      {
-         String newInstructions = "";
-         for(int j=0;j<instructions.length();j++)
-         {
-            char c = instructions.charAt(j);
-            switch(c)
-            {
-               case 'F':
-                  newInstructions += strF;
-                  break;
-               case 'X':
-                  newInstructions += strX;
-                  break;
-               case 'Y':
-                  newInstructions += strY;
-                  break;
-               default:
-                  newInstructions += c;
-                  break;
-            }
-         }
-         instructions = newInstructions;
-         finalLen *= lengthFract;
-      }
-      // Remove anything that's not F, f, +, -, [, or ]
-      instructions = instructions.replaceAll("[^F\\+\\-]", "");
-      // Remove angles that cancel each other out, makes coding corners easier
-      instructions = instructions.replaceAll("\\+\\-|\\-\\+", "");
+      // Generate the complete set of drawing instructions based on the current level
+      String instructions = generateInstructions();
 
-      turtleGraphics(g, instructions, level, finalLen);
+      // Calculate the length of each line segment in the drawing based on the reduction factor and level
+      double finalLen = Math.pow(reductFact, level) * lengthFract * maxY;
+
+      // Draw the fractal using the generated instructions and calculated line segment length
+      turtleGraphics(g, instructions, finalLen);
    }
 
 
-   public void turtleGraphics(Graphics g, String instruction, int depth, double len) {
-      // Variables to remember the position and direction if we need to backtrack
+   /**
+    * Renders the turtle graphics based on the given instruction string.
+    * @param g The graphics context on which the drawing is performed.
+    * @param instruction A string containing the drawing commands.
+    * @param len The length of each step in the turtle graphics.
+    */
+   public void turtleGraphics(Graphics g, String instruction, double len) {
       double rad, dx, dy;
 
       for (int i = 0; i < instruction.length(); i++) {
          char ch = instruction.charAt(i);
-         char nextCh = (i + 1 < instruction.length()) ? instruction.charAt(i + 1) : '_';
-         char prevCh = (i > 0) ? instruction.charAt(i - 1) : '_';
+         // Check for next and previous characters to determine context for corners.
+         char nextCh = (i + 1 < instruction.length()) ? instruction.charAt(i + 1) : ' ';
+         char prevCh = (i > 0) ? instruction.charAt(i - 1) : ' ';
 
-         // Determine the current direction in radians.
+         // Convert the current direction from degrees to radians.
          rad = Math.toRadians(dir);
+         // Calculate the horizontal and vertical components of the movement.
          dx = len * Math.cos(rad);
          dy = len * Math.sin(rad);
 
+         // Determine if the current position is a corner.
          boolean isCorner = (prevCh == 'F' || nextCh == 'F') && (rotation == 90 || rotation == -90);
 
          switch (ch) {
             case 'F': // Step forward and draw
                   if (isCorner) {
-                     // Draw line with reduced length to simulate a corner rounding
+                     // If it's a corner, reduce the length of the line to create a rounded corner effect.
                      drawTo(g, dx * (1 - corner), dy * (1 - corner));
                   } else {
-                     // Draw full-length line
+                     // Otherwise, draw the full length of the line.
                      drawTo(g, dx, dy);
                   }
                   break;
 
-            case 'X':
-               if (depth > 0)
-                  turtleGraphics(g, strX, depth - 1, reductFact * len);
-               break;
-            case 'Y':
-               if (depth > 0)
-                  turtleGraphics(g, strY, depth - 1, reductFact * len);
-               break;
-               
             case '+': // Turn right
-               if((rotation == 90 || rotation == -90) && prevCh != '_' && prevCh == 'F' && nextCh != '_' && nextCh == 'F'){
-                  double cornerLen = len * Math.sqrt(corner*corner + corner*corner);
-                  rad = Math.PI/180 * ((dir-rotation/2) % 360); // Degrees -> radians
-                  dx = cornerLen * Math.cos(rad);
-                  dy = cornerLen * Math.sin(rad);
-                  drawTo(g, dx, dy);
-               }
-               dir -= rotation; break;
+                  // Handle rounded corners when a turn is immediately followed by another forward command.
+                  if ((rotation == 90 || rotation == -90) && prevCh == 'F' && nextCh == 'F') {
+                     double cornerLen = len * Math.sqrt(2 * corner * corner);
+                     // Adjust direction for half the turn to smooth the corner.
+                     rad = Math.toRadians(dir - rotation / 2);
+                     drawTo(g, cornerLen * Math.cos(rad), cornerLen * Math.sin(rad));
+                  }
+                  // Update direction by subtracting the rotation angle.
+                  dir -= rotation;
+                  break;
+
             case '-': // Turn left
-               if((rotation == 90 || rotation == -90) && prevCh != '_' && prevCh == 'F' && nextCh != '_' && nextCh == 'F'){
-                  double cornerLen = len * Math.sqrt(corner*corner + corner*corner);
-                  rad = Math.PI/180 * ((dir+rotation/2) % 360); // Degrees -> radians
-                  dx = cornerLen * Math.cos(rad);
-                  dy = cornerLen * Math.sin(rad);
-                  drawTo(g, dx, dy);
-               }
-               dir += rotation; break;
+                  // Similar logic for left turns as for right turns.
+                  if ((rotation == 90 || rotation == -90) && prevCh == 'F' && nextCh == 'F') {
+                     double cornerLen = len * Math.sqrt(2 * corner * corner);
+                     rad = Math.toRadians(dir + rotation / 2);
+                     drawTo(g, cornerLen * Math.cos(rad), cornerLen * Math.sin(rad));
+                  }
+                  // Update direction by adding the rotation angle.
+                  dir += rotation;
+                  break;
          }
       }
+   }
+
+/**
+ * Generates the expanded set of instructions for drawing the fractal.
+ * This method iteratively expands the axiom based on predefined rules for each level of iteration.
+ * It then cleans up the resulting instruction string by removing unnecessary characters and simplifying redundant commands.
+ * 
+ * @return A string containing the fully expanded and cleaned instructions for drawing the fractal.
+ */
+
+   private String generateInstructions() {
+      // Start with the initial axiom
+      StringBuilder newInstructions = new StringBuilder(axiom);
+
+      // Expand the axiom for the specified number of levels
+      for (int i = 0; i < level; i++) {
+         // Use a new StringBuilder for the next level of instructions
+         StringBuilder nextLevelInstructions = new StringBuilder();
+         
+         // Iterate over the current set of instructions
+         for (int j = 0; j < newInstructions.length(); j++) {
+            char c = newInstructions.charAt(j); // Get the current character to expand
+            switch (c) {
+                  case 'F':
+                     nextLevelInstructions.append(strF);
+                     break;
+                  case 'X':
+                     nextLevelInstructions.append(strX);
+                     break;
+                  case 'Y':
+                     nextLevelInstructions.append(strY);
+                     break;
+                  default:
+                     nextLevelInstructions.append(c);
+                     break;
+            }
+         }
+        // Set the newly expanded instructions for the next iteration
+         newInstructions = nextLevelInstructions;
+      }
+      // Convert StringBuilder to String and remove any characters not involved in drawing commands
+      return newInstructions.toString()
+                           .replaceAll("[^F\\+\\-]", "") // Keep only 'F', '+', '-'
+                           .replaceAll("\\+\\-|\\-\\+", ""); // Simplify '+-' and '-+' pairs
    }
 }
 
