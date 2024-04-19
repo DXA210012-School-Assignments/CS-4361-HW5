@@ -3,7 +3,7 @@
 import java.awt.*;
 import java.awt.event.*;
 
-public class DragonCorners extends Frame {
+public class FractalGrammars extends Frame {
    public static void main(String[] args) {
       if (args.length == 0)
          System.out.println("Use filename as program argument.");
@@ -11,7 +11,7 @@ public class DragonCorners extends Frame {
          new FractalGrammars(args[0]);
    }
 
-   DragonCorners(String fileName) {
+   FractalGrammars(String fileName) {
       super("Click left or right mouse button to change the level");
       addWindowListener(new WindowAdapter() {
          public void windowClosing(WindowEvent e) {System.exit(0);}
@@ -29,7 +29,7 @@ class CvFractalGrammars extends Canvas {
    
    int maxX, maxY, level = 1;
    double xLast, yLast, dir, rotation, dirStart, fxStart, fyStart,
-            lengthFract, reductFact;
+          lengthFract, reductFact;
 
    void error(String str) {
       System.out.println(str);
@@ -76,23 +76,40 @@ class CvFractalGrammars extends Canvas {
    int iX(double x) {return (int) Math.round(x);}
    int iY(double y) {return (int) Math.round(maxY - y);}
 
-   void drawTo(Graphics g, double x, double y) {
-      double r = rotation * 0.9;
-      double dx = x - xLast, dy = y - yLast;
-      double h = rotation * dy, v = rotation * dx, h1 = r * dy, v1 = r * dx;
-      double [] xPol = {xLast + h, x + h1, x - h1, xLast - h},
-         yPol = {yLast - v, y - v1, y + v1, yLast + v};
-      int xDev[] = new int[4], yDev[] = new int[4];
-      for (int i=0; i<4; ++i) {
-         xDev[i] = iX(xPol[i]);
-         yDev[i] = iY(yPol[i]);
-         }
-      g.fillPolygon(xDev, yDev, 4);
-      xLast = x;
-      yLast = y;
-      rotation = r;
-   }
 
+
+
+   void drawTo(Graphics g, double xLast, double yLast, double xCorner, double yCorner) {
+      // Calculate the approach point, which is 3/4 the way to the corner
+      double xApproach = xLast + 0.75 * (xCorner - xLast);
+      double yApproach = yLast + 0.75 * (yCorner - yLast);
+  
+      // Draw the line to the approach point
+      g.drawLine(iX(xLast), iY(yLast), iX(xApproach), iY(yApproach));
+  
+      // Calculate the departure point, which is 1/4 past the corner
+      double xDepart = xCorner + 0.25 * (xCorner - xLast);
+      double yDepart = yCorner + 0.25 * (yCorner - yLast);
+  
+      // Draw the line from the departure point to the new current position, which is the corner bypassed
+      g.drawLine(iX(xApproach), iY(yApproach), iX(xDepart), iY(yDepart));
+  
+      // Debug statements
+      System.out.println("Drawing line to approach point: (" + xApproach + ", " + yApproach + ")");
+      System.out.println("Drawing line from depart point: (" + xDepart + ", " + yDepart + ")");
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
    void moveTo(Graphics g, double x, double y) {
       xLast = x; yLast = y;
    }
@@ -111,20 +128,35 @@ class CvFractalGrammars extends Canvas {
       for (int i = 0; i < instruction.length(); i++) {
          char ch = instruction.charAt(i);
          switch (ch) {
-         case 'F': // Step forward and draw
-            // Start: (xLast, yLast), direction: dir, steplength: len
+
+
+
+
+            case 'F': // Step forward and draw
             if (depth == 0) {
-               double rad = Math.PI / 180 * dir, // Degrees -> radians
-               dx = len * Math.cos(rad), dy = len * Math.sin(rad);
-               drawTo(g, xLast + dx, yLast + dy);
-            } else
-               turtleGraphics(g, strF, depth - 1, reductFact * len);
+                double rad = Math.PI / 180 * dir; // Convert direction to radians
+                double dx = len * Math.cos(rad); // Calculate change in x
+                double dy = len * Math.sin(rad); // Calculate change in y
+                double xCorner = xLast + dx; // End point x without rounding the corner
+                double yCorner = yLast + dy; // End point y without rounding the corner
+
+                drawTo(g, xLast, yLast, xCorner, yCorner); // Draw the line with what will appear as rounded corners
+                xLast = xCorner; // Update current x position
+                yLast = yCorner; // Update current y position
+            } else {
+                turtleGraphics(g, strF, depth - 1, reductFact * len);
+            }
             break;
+
+
+            
+
+
          case 'f': // Step forward without drawing
             // Start: (xLast, yLast), direction: dir, steplength: len
             if (depth == 0) {
-               double rad = Math.PI / 180 * dir, // Degrees -> radians
-               dx = len * Math.cos(rad), dy = len * Math.sin(rad);
+               double rad = Math.PI / 180 * dir;
+               double dx = len * Math.cos(rad), dy = len * Math.sin(rad);
                moveTo(g, xLast + dx, yLast + dy);
             } else
                turtleGraphics(g, strf, depth - 1, reductFact * len);
@@ -150,7 +182,13 @@ class CvFractalGrammars extends Canvas {
             break;
             
             
-
+            
+            
+            
+            
+            
+            
+            
             
          case '+': // Turn right
             dir -= rotation;

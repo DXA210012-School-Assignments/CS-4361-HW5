@@ -9,6 +9,7 @@ public class TreeBonus extends JPanel {
     private static final double INITIAL_LENGTH = 100.0;
     private static final double ANGLE_RANGE = 60.0;
     private static final double LENGTH_RATIO = 0.7;
+    @SuppressWarnings("unused")
     private static final double THICKNESS_RATIO = 0.7;
 
     private Random random;

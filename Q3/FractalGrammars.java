@@ -58,6 +58,7 @@ class CvFractalGrammars extends Canvas {
       if (inp.fails()) error("Input file incorrect.");
 
       addMouseListener(new MouseAdapter() {
+         @SuppressWarnings("deprecation")
          public void mousePressed(MouseEvent evt) {
             if ((evt.getModifiers() & InputEvent.BUTTON3_MASK) != 0) {
                level--; // Right mouse button decreases level
