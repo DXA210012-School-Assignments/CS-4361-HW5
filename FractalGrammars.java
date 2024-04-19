@@ -2,8 +2,6 @@
 // Extended with U and V strings, file format needs to include U and V strings too.
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.*;
-
 
 public class FractalGrammars extends Frame {
    public static void main(String[] args) {
@@ -78,74 +76,67 @@ class CvFractalGrammars extends Canvas {
    int iX(double x) {return (int) Math.round(x);}
    int iY(double y) {return (int) Math.round(maxY - y);}
 
+   void drawTo(Graphics g, double x, double y) {
+      g.drawLine(iX(xLast), iY(yLast), iX(x), iY(y));
+      xLast = x; yLast = y;
+   }
 
-   void drawRoundedLine(Graphics2D g2, double x1, double y1, double x2, double y2, double radius) {
-      // Ensure that radius is small relative to the length of the segment
-      radius = Math.min(radius, Math.hypot(x2 - x1, y2 - y1) / 2);
-      // Calculate direction from (x1, y1) to (x2, y2)
-      double angle = Math.atan2(y2 - y1, x2 - x1);
-      // Starting point for the line considering the radius
-      double xStart = x1 + radius * Math.cos(angle);
-      double yStart = y1 + radius * Math.sin(angle);
-      // Ending point for the line considering the radius
-      double xEnd = x2 - radius * Math.cos(angle);
-      double yEnd = y2 - radius * Math.sin(angle);
-      // Draw line from start to end points
-      g2.draw(new Line2D.Double(xStart, yStart, xEnd, yEnd));
-      // Draw arcs at the end points
-      g2.draw(new Arc2D.Double(x2 - radius, y2 - radius, 2 * radius, 2 * radius,
-              Math.toDegrees(-angle) - 90, 180, Arc2D.OPEN));
-      g2.draw(new Arc2D.Double(x1 - radius, y1 - radius, 2 * radius, 2 * radius,
-              Math.toDegrees(-angle) + 90, 180, Arc2D.OPEN));
-  }
-  
+   void moveTo(Graphics g, double x, double y) {
+      xLast = x; yLast = y;
+   }
 
+   public void paint(Graphics g) {
+      Dimension d = getSize();
+      maxX = d.width - 1; maxY = d.height - 1;
+      xLast = fxStart * maxX; yLast = fyStart * maxY;
+      dir = dirStart; // Initial direction in degrees
+      turtleGraphics(g, axiom, level, lengthFract * maxY);
+   }
 
-  public void paint(Graphics g) {
-   // Overriding the paint method to use Graphics2D for better control over geometry
-   Graphics2D g2 = (Graphics2D) g;
-   // Set rendering hints for better drawing quality
-   g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-   Dimension d = getSize();
-   maxX = d.width - 1; maxY = d.height - 1;
-   xLast = fxStart * maxX; yLast = fyStart * maxY;
-   dir = dirStart; // Initial direction in degrees
-   turtleGraphics(g2, axiom, level, lengthFract * maxY); // Use g2 instead of g
-}
-
-   public void turtleGraphics(Graphics g2, String instruction,
+   public void turtleGraphics(Graphics g, String instruction,
          int depth, double len) {
-      //double xMark = 0, yMark = 0, dirMark = 0;
+      double xMark = 0, yMark = 0, dirMark = 0;
       for (int i = 0; i < instruction.length(); i++) {
          char ch = instruction.charAt(i);
          switch (ch) {
-
-
-            case 'F': // Step forward and draw
+         case 'F': // Step forward and draw
+            // Start: (xLast, yLast), direction: dir, steplength: len
             if (depth == 0) {
-               double rad = Math.PI / 180 * dir; // Convert direction to radians
-               double newX = xLast + len * Math.cos(rad); // Calculate the new x position
-               double newY = yLast + len * Math.sin(rad); // Calculate the new y position
-   
-               drawRoundedLine(g2, xLast, yLast, newX, newY, len * 0.1); // Draw with rounded corners
-               xLast = newX; // Update current x position
-               yLast = newY; // Update current y position
-            } else {
-               turtleGraphics(g2, strF, depth - 1, reductFact * len);
-            }
+               double rad = Math.PI / 180 * dir, // Degrees -> radians
+               dx = len * Math.cos(rad), dy = len * Math.sin(rad);
+               drawTo(g, xLast + dx, yLast + dy);
+            } else
+               turtleGraphics(g, strF, depth - 1, reductFact * len);
             break;
-        
+         case 'f': // Step forward without drawing
+            // Start: (xLast, yLast), direction: dir, steplength: len
+            if (depth == 0) {
+               double rad = Math.PI / 180 * dir, // Degrees -> radians
+               dx = len * Math.cos(rad), dy = len * Math.sin(rad);
+               moveTo(g, xLast + dx, yLast + dy);
+            } else
+               turtleGraphics(g, strf, depth - 1, reductFact * len);
+            break;
 
-
-         case 'X':
+            
+            
+         case 'U':
             if (depth > 0)
-               turtleGraphics(g, strX, depth - 1, reductFact * len);
+               turtleGraphics(g, strU, depth - 1, reductFact * len);
             break;
-         case 'Y':
+         case 'V':
             if (depth > 0)
-               turtleGraphics(g, strY, depth - 1, reductFact * len);
+               turtleGraphics(g, strV, depth - 1, reductFact * len);
             break;
-
+            
+            
+            
+            
+            
+            
+            
+            
+            
             
          case '+': // Turn right
             dir -= rotation;
@@ -153,7 +144,14 @@ class CvFractalGrammars extends Canvas {
          case '-': // Turn left
             dir += rotation;
             break;
-
+         case '[': // Save position and direction
+            xMark = xLast; yMark = yLast;
+            dirMark = dir;
+            break;
+         case ']': // Back to saved position and direction
+            xLast = xMark; yLast = yMark;
+            dir = dirMark;
+            break;
          }
       }
    }
